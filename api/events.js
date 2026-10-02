@@ -1,42 +1,16 @@
-module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  // Temporary test response
-  return res.status(200).json([
-    {
-      id: "test-1",
-      title: "API is working!",
-      org: "Test",
-      date: "2026-10-05",
-      time: "12:00 PM",
-      location: "Online",
-      description: "If you see this, the serverless function is deployed correctly.",
-      sourceUrl: "https://cse-raccoon-tips.vercel.app",
-      isManual: false
-    }
-  ]);
-};
-
-/*
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
 const ical = require('node-ical');
 const NodeCache = require('node-cache');
 
-// Cache lives for the lifetime of the serverless instance (~minutes)
-const cache = new NodeCache({ stdTTL: 60 * 30 }); // 30 minutes
+const cache = new NodeCache({ stdTTL: 60 * 30 }); // cache for 30 minutes
 
 function normalizeEvent({ id, title, org, date, time, location, description, sourceUrl }) {
   return {
     id,
     title: (title || 'Untitled').trim(),
     org,
-    date,                 // YYYY-MM-DD
+    date,
     time: time || '',
     location: location || 'TBA',
     description: description || '',
@@ -49,12 +23,7 @@ function normalizeEvent({ id, title, org, date, time, location, description, sou
 async function scrapeVGDC() {
   const url = 'https://www.vgdc.dev/events';
   try {
-    const res = await fetch(url, { timeout: 8000 });
-    const html = await res.text();
-    const $ = cheerio.load(html);
-
-    // Keep a reliable known event + any others you can parse
-    const events = [
+    return [
       normalizeEvent({
         id: 'vgdc-fall-gbm-2026',
         title: 'Fall GBM',
@@ -66,10 +35,8 @@ async function scrapeVGDC() {
         sourceUrl: url
       })
     ];
-
-    return events;
   } catch (err) {
-    console.error('VGDC scrape failed:', err.message);
+    console.error('VGDC failed:', err.message);
     return [];
   }
 }
@@ -78,8 +45,6 @@ async function scrapeVGDC() {
 async function scrapeACM() {
   const url = 'https://acmucsd.com/events';
   try {
-    // For now we return the known current events.
-    // You can later improve the cheerio selectors.
     return [
       normalizeEvent({
         id: 'acm-census-2026',
@@ -113,12 +78,12 @@ async function scrapeACM() {
       })
     ];
   } catch (err) {
-    console.error('ACM scrape failed:', err.message);
+    console.error('ACM failed:', err.message);
     return [];
   }
 }
 
-// ---------- WIC (Google Calendar ICS – most reliable) ----------
+// ---------- WIC (Google Calendar) ----------
 async function scrapeWIC() {
   const icsUrl =
     'https://calendar.google.com/calendar/ical/b26bef81734ab97310db8207bc9121bbd10e83cff8e05cdb009fe82b64fb5f6e%40group.calendar.google.com/public/basic.ics';
@@ -152,14 +117,13 @@ async function scrapeWIC() {
     }
     return events;
   } catch (err) {
-    console.error('WIC ICS failed:', err.message);
+    console.error('WIC failed:', err.message);
     return [];
   }
 }
 
-// ---------- Serverless handler ----------
+// ---------- Handler ----------
 module.exports = async (req, res) => {
-  // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -169,7 +133,6 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Return cached result if available
     const cached = cache.get('all-events');
     if (cached) {
       return res.status(200).json(cached);
@@ -183,7 +146,7 @@ module.exports = async (req, res) => {
 
     const all = [...vgdc, ...acm, ...wic];
 
-    // Simple deduplication
+    // Remove duplicates
     const seen = new Set();
     const unique = all.filter((e) => {
       const key = `${e.title}|${e.date}|${e.org}`;
@@ -199,4 +162,3 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: 'Failed to fetch events' });
   }
 };
-*/
