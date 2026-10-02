@@ -70,7 +70,7 @@ async function scrapeACM() {
         id: 'acm-bonfire-2026',
         title: 'Bonfire',
         org: 'ACM',
-        date: '2026-10-04',
+        date: '2026-10-03',
         time: '5:00 PM - 9:00 PM',
         location: 'La Jolla Shores',
         description: 'ACM Bonfire at La Jolla Shores',
