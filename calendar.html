@@ -155,13 +155,20 @@
       padding: 0.5rem 0;
     }
     .cal-cell {
-      min-height: 80px;
-      border: 1px solid #E2E8F0;
-      border-radius: 8px;
-      padding: 6px;
-      font-size: 0.85rem;
-      background: #F8FAFC;
-      position: relative;
+        min-height: 80px;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 4px;
+        font-size: 0.85rem;
+        background: #F8FAFC;
+        position: relative;
+        overflow: hidden;
+    }
+    .cal-date {
+        font-weight: 700;
+        color: var(--navy);
+        margin-bottom: 3px;
+        font-size: 0.8rem;
     }
     .cal-cell.other-month { opacity: 0.4; }
     .cal-cell.today {
@@ -170,16 +177,20 @@
     }
     .cal-date { font-weight: 700; color: var(--navy); margin-bottom: 4px; }
     .cal-event {
-      background: var(--navy);
-      color: white;
-      font-size: 0.7rem;
-      padding: 2px 5px;
-      border-radius: 4px;
-      margin-bottom: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      cursor: pointer;
+        background: var(--navy);
+        color: white;
+        font-size: 0.62rem;
+        padding: 2px 5px;
+        border-radius: 4px;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        width: 100%;          
+        display: block;
+        line-height: 1.25;
+        box-sizing: border-box;
     }
     .cal-event.manual { background: var(--yellow); color: var(--navy); }
 
@@ -602,7 +613,7 @@
             chip.title = `${ev.title} – ${ev.org}`;   // full title on hover
             cell.appendChild(chip);
         });
-        
+
         if (dayEvents.length > 3) {
           const more = document.createElement('div');
           more.style.fontSize = '0.65rem';
