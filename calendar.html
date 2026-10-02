@@ -395,7 +395,6 @@
       <div>
         <button class="btn btn-outline" id="prevMonth">←</button>
         <button class="btn btn-outline" id="nextMonth" style="margin-left:0.5rem;">→</button>
-        <button class="btn" id="todayBtn" style="margin-left:0.75rem;">Today</button>
       </div>
       <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
         <select id="filterSelect" class="btn btn-outline" style="padding:0.6rem 1rem; cursor:pointer;">
@@ -806,10 +805,6 @@
     });
     document.getElementById('nextMonth').addEventListener('click', () => {
       current.setMonth(current.getMonth() + 1);
-      renderCalendar();
-    });
-    document.getElementById('todayBtn').addEventListener('click', () => {
-      current = new Date();
       renderCalendar();
     });
     document.getElementById('filterSelect').addEventListener('change', (e) => {
