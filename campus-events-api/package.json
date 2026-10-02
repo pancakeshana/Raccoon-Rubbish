@@ -1,21 +1,11 @@
 {
-  "name": "campus-events-api",
+  "name": "cse-raccoon-tips",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "private": true,
   "dependencies": {
-    "cheerio": "^1.2.0",
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "node-cache": "^5.1.2",
-    "node-fetch": "^3.3.2",
-    "node-ical": "^0.27.2"
+    "cheerio": "^1.0.0",
+    "node-fetch": "^2.7.0",
+    "node-ical": "^0.16.1",
+    "node-cache": "^5.1.2"
   }
 }
