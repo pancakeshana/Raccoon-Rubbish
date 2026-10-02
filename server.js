@@ -7,6 +7,7 @@ const NodeCache = require('node-cache');
 
 const app = express();
 const cache = new NodeCache({ stdTTL: 60 * 30 }); // cache 30 minutes
+const WIC_TIME_ZONE = 'America/Los_Angeles';
 
 app.use(cors()); // allow your frontend origin
 
@@ -23,6 +24,18 @@ function normalizeEvent({ id, title, org, date, time, location, description, sou
     sourceUrl,
     isManual: false
   };
+}
+
+function formatDateForTimeZone(date, timeZone) {
+  const dateParts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(date).map(({ type, value }) => [type, value])
+  );
+  return `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
 }
 
 // ---------- VGDC scraper ----------
@@ -140,14 +153,18 @@ async function scrapeWIC() {
     if (ev.type !== 'VEVENT') continue;
 
     const start = ev.start;
-    const date = start.toISOString().slice(0, 10); // YYYY-MM-DD
+    const date = formatDateForTimeZone(start, WIC_TIME_ZONE);
 
     events.push(normalizeEvent({
       id: `wic-${ev.uid || date + '-' + ev.summary}`,
       title: ev.summary || 'WIC Event',
       org: 'WIC',
       date,
-      time: start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      time: start.toLocaleTimeString('en-US', {
+        timeZone: WIC_TIME_ZONE,
+        hour: 'numeric',
+        minute: '2-digit'
+      }),
       location: ev.location || 'TBA',
       description: (ev.description || '').slice(0, 300),
       sourceUrl: 'https://wicucsd.vercel.app/events'

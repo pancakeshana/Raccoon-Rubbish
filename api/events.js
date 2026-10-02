@@ -4,6 +4,7 @@ const ical = require('node-ical');
 const NodeCache = require('node-cache');
 
 const cache = new NodeCache({ stdTTL: 60 * 30 }); // cache for 30 minutes
+const WIC_TIME_ZONE = 'America/Los_Angeles';
 
 function normalizeEvent({ id, title, org, date, time, location, description, sourceUrl }) {
   return {
@@ -17,6 +18,18 @@ function normalizeEvent({ id, title, org, date, time, location, description, sou
     sourceUrl,
     isManual: false
   };
+}
+
+function formatDateForTimeZone(date, timeZone) {
+  const dateParts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(date).map(({ type, value }) => [type, value])
+  );
+  return `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
 }
 
 // ---------- VGDC ----------
@@ -97,7 +110,7 @@ async function scrapeWIC() {
       if (ev.type !== 'VEVENT' || !ev.start) continue;
 
       const start = new Date(ev.start);
-      const date = start.toISOString().slice(0, 10);
+      const date = formatDateForTimeZone(start, WIC_TIME_ZONE);
 
       events.push(
         normalizeEvent({
@@ -106,6 +119,7 @@ async function scrapeWIC() {
           org: 'WIC',
           date,
           time: start.toLocaleTimeString('en-US', {
+            timeZone: WIC_TIME_ZONE,
             hour: 'numeric',
             minute: '2-digit'
           }),
