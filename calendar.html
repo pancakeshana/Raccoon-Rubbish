@@ -541,10 +541,22 @@
         events = [...SEEDED_EVENTS];
         saveEvents();
       }
+      removeEventsOlderThanOneWeek();
     }
 
     function saveEvents() {
       localStorage.setItem('campusEvents', JSON.stringify(events));
+    }
+
+    function removeEventsOlderThanOneWeek() {
+      const cutoff = new Date();
+      cutoff.setHours(0, 0, 0, 0);
+      cutoff.setDate(cutoff.getDate() - 7);
+      const cutoffDate = [cutoff.getFullYear(), String(cutoff.getMonth() + 1).padStart(2, '0'), String(cutoff.getDate()).padStart(2, '0')].join('-');
+      const previousCount = events.length;
+
+      events = events.filter(event => event.date >= cutoffDate);
+      if (events.length !== previousCount) saveEvents();
     }
 
     // ========== UI HELPERS ==========
@@ -736,6 +748,7 @@
 
             const manual = events.filter(e => e.isManual);
             events = [...remote, ...manual];
+            removeEventsOlderThanOneWeek();
             saveEvents();
             renderCalendar();
             renderList();
