@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Connect – Events Calendar</title>
+  <style>
+    :root {
+      --navy: #0A2540;
+      --navy-light: #1E3A5F;
+      --light-blue: #7DD3FC;
+      --light-blue-soft: #E0F2FE;
+      --yellow: #FACC15;
+      --yellow-dark: #EAB308;
+      --white: #FFFFFF;
+      --bg: #F8FAFC;
+      --text: #0F172A;
+      --text-muted: #64748B;
+      --radius: 12px;
+      --shadow: 0 4px 6px -1px rgba(10, 37, 64, 0.1), 0 2px 4px -1px rgba(10, 37, 64, 0.06);
+      --shadow-hover: 0 10px 15px -3px rgba(10, 37, 64, 0.12), 0 4px 6px -2px rgba(10, 37, 64, 0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow);
+    }
+
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      text-decoration: none;
+      color: var(--white);
+    }
+    .logo span { color: var(--yellow); }
+
+    nav a {
+      color: rgba(255,255,255,0.9);
+      text-decoration: none;
+      margin-left: 1.5rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    nav a:hover { color: var(--yellow); }
+
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      color: var(--white);
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+    .hero h1 { font-size: 2.4rem; font-weight: 800; margin-bottom: 0.5rem; }
+    .hero p { opacity: 0.95; max-width: 560px; margin: 0 auto; }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+
+    .btn {
+      background: var(--navy);
+      color: white;
+      border: none;
+      padding: 0.7rem 1.4rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-size: 0.95rem;
+    }
+    .btn:hover { background: var(--navy-light); }
+    .btn-yellow {
+      background: var(--yellow);
+      color: var(--navy);
+    }
+    .btn-yellow:hover { background: var(--yellow-dark); }
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--navy);
+      color: var(--navy);
+    }
+    .btn-outline:hover { background: var(--navy); color: white; }
+
+    /* Calendar */
+    .calendar-wrap {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+    .cal-header h2 { color: var(--navy); font-size: 1.4rem; }
+
+    .cal-nav button {
+      background: var(--light-blue-soft);
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      color: var(--navy);
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .cal-day-name {
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding: 0.5rem 0;
+    }
+    .cal-cell {
+      min-height: 80px;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 6px;
+      font-size: 0.85rem;
+      background: #F8FAFC;
+      position: relative;
+    }
+    .cal-cell.other-month { opacity: 0.4; }
+    .cal-cell.today {
+      border-color: var(--yellow);
+      background: #FEF9C3;
+    }
+    .cal-date { font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+    .cal-event {
+      background: var(--navy);
+      color: white;
+      font-size: 0.7rem;
+      padding: 2px 5px;
+      border-radius: 4px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+    }
+    .cal-event.manual { background: var(--yellow); color: var(--navy); }
+
+    /* Event cards */
+    .section-title {
+      font-size: 1.5rem;
+      color: var(--navy);
+      margin-bottom: 1rem;
+    }
+
+    .events-list {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .event-card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem 1.5rem;
+      display: grid;
+      grid-template-columns: 90px 1fr auto;
+      gap: 1.25rem;
+      align-items: start;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .event-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .event-date-box {
+      background: var(--navy);
+      color: white;
+      border-radius: 10px;
+      text-align: center;
+      padding: 0.75rem 0.5rem;
+      min-width: 90px;
+    }
+    .event-date-box .month { font-size: 0.75rem; text-transform: uppercase; opacity: 0.85; }
+    .event-date-box .day { font-size: 1.6rem; font-weight: 800; line-height: 1.1; }
+    .event-date-box .time { font-size: 0.7rem; margin-top: 4px; opacity: 0.9; }
+
+    .event-body h3 { color: var(--navy); font-size: 1.15rem; margin-bottom: 0.25rem; }
+    .event-meta {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+    .event-meta span { margin-right: 1rem; }
+    .event-desc { font-size: 0.95rem; color: var(--text); }
+    .event-source {
+      font-size: 0.8rem;
+      margin-top: 0.6rem;
+    }
+    .event-source a { color: var(--navy-light); }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 50px;
+      background: var(--light-blue-soft);
+      color: var(--navy);
+    }
+    .badge.manual { background: #FEF9C3; color: #854D0E; }
+
+    /* Admin panel */
+    .admin-panel {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.75rem;
+      margin-top: 2.5rem;
+      border-top: 4px solid var(--yellow);
+      display: none;
+    }
+    .admin-panel.visible { display: block; }
+
+    .form-group { margin-bottom: 1rem; }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+      color: var(--navy);
+      font-size: 0.9rem;
+    }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 2px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--light-blue);
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .passcode-box {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-top: 2rem;
+      max-width: 400px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--navy);
+      color: white;
+      padding: 0.85rem 1.75rem;
+      border-radius: 50px;
+      font-weight: 600;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 200;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    footer {
+      background: var(--navy);
+      color: white;
+      text-align: center;
+      padding: 2rem;
+      margin-top: 3rem;
+    }
+    footer p { opacity: 0.85; font-size: 0.9rem; }
+
+    @media (max-width: 700px) {
+      .event-card { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      .cal-cell { min-height: 60px; font-size: 0.75rem; }
+      nav a { margin-left: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <a href="student-organizations.html" class="logo">Campus<span>Connect</span></a>
+      <nav>
+        <a href="student-organizations.html">Organizations</a>
+        <a href="advice-wall.html">Advice Wall</a>
+        <a href="#">Events</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Campus Events Calendar</h1>
+    <p>All organization events in one place. Automatically synced from club websites + manual additions.</p>
+  </section>
+
+  <main>
+    <div class="toolbar">
+      <div>
+        <button class="btn btn-outline" id="prevMonth">←</button>
+        <button class="btn btn-outline" id="nextMonth" style="margin-left:0.5rem;">→</button>
+        <button class="btn" id="todayBtn" style="margin-left:0.75rem;">Today</button>
+      </div>
+      <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+        <button class="btn btn-yellow" id="syncBtn">↻ Sync from Org Sites</button>
+        <button class="btn" id="adminToggle">+ Add Event (Admin)</button>
+      </div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="calendar-wrap">
+      <div class="cal-header">
+        <h2 id="calMonthYear">October 2026</h2>
+      </div>
+      <div class="cal-grid" id="calGrid">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <!-- Upcoming list -->
+    <h2 class="section-title">Upcoming & Recent Events</h2>
+    <div class="events-list" id="eventsList"></div>
+
+    <!-- Passcode gate -->
+    <div class="passcode-box" id="passcodeBox" style="display:none;">
+      <h3 style="color:var(--navy); margin-bottom:0.75rem;">Admin Access</h3>
+      <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">Enter the passcode to add or manage events.</p>
+      <div class="form-group">
+        <input type="password" id="passcodeInput" placeholder="Passcode" maxlength="20">
+      </div>
+      <button class="btn" id="passcodeSubmit">Unlock</button>
+    </div>
+
+    <!-- Admin form (hidden until unlocked) -->
+    <div class="admin-panel" id="adminPanel">
+      <h2 style="color:var(--navy); margin-bottom:1rem;">Add Event Manually</h2>
+      <form id="eventForm">
+        <div class="form-group">
+          <label>Event Title</label>
+          <input type="text" id="evTitle" required placeholder="e.g. Fall GBM">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Organization</label>
+            <input type="text" id="evOrg" required placeholder="e.g. VGDC">
+          </div>
+          <div class="form-group">
+            <label>Location</label>
+            <input type="text" id="evLocation" placeholder="e.g. Multipurpose Room">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="evDate" required>
+          </div>
+          <div class="form-group">
+            <label>Time</label>
+            <input type="text" id="evTime" placeholder="e.g. 7:00 PM - 10:00 PM">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="evDesc" rows="3" placeholder="Short description of the event"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Source URL (optional)</label>
+          <input type="url" id="evUrl" placeholder="https://...">
+        </div>
+        <button type="submit" class="btn btn-yellow">Save Event</button>
+        <button type="button" class="btn btn-outline" id="cancelAdmin" style="margin-left:0.75rem;">Cancel</button>
+      </form>
+    </div>
+  </main>
+
+  <footer>
+    <p>Campus Connect • Events Calendar</p>
+    <p style="margin-top:0.4rem;">Events are synced from organization websites and can be added manually by authorized users.</p>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ========== DATA ==========
+    // Seeded from live scrape of https://www.vgdc.dev/events (as of Oct 2026)
+    const SEEDED_EVENTS = [
+      {
+        id: 'vgdc-fall-gbm-2026',
+        title: 'Fall GBM',
+        org: 'VGDC',
+        date: '2026-10-02',
+        time: '7:00 PM - 10:00 PM',
+        location: 'Multipurpose Room',
+        description: 'Join us Friday, October 2nd in the Multipurpose Room (MPR) to see what VGDC has planned for the quarter, and enjoy some FREE PANDA EXPRESS!!',
+        sourceUrl: 'https://www.vgdc.dev/events',
+        isManual: false
+      },
+      {
+        id: 'vgdc-summer-sendoff',
+        title: 'Summer Sendoff',
+        org: 'VGDC',
+        date: '2026-05-28',
+        time: '7:00 PM - 10:00 PM',
+        location: 'Multipurpose Room',
+        description: 'FREE Banh mi while watching the showcase of our club-wide game, Spoilage. Sending off graduating seniors!',
+        sourceUrl: 'https://www.vgdc.dev/events',
+        isManual: false
+      },
+      {
+        id: 'vgdc-activision',
+        title: 'Activision Panel',
+        org: 'VGDC',
+        date: '2026-05-20',
+        time: '6:00 PM - 8:00 PM',
+        location: 'CSE 1202',
+        description: 'Three panelists from Activision games share industry experience and recruitment advice. Pizza provided.',
+        sourceUrl: 'https://www.vgdc.dev/events',
+        isManual: false
+      }
+    ];
+
+    // In a real system you would maintain a list of org event page URLs
+    // and scrape/parse them on a backend (or via a CORS proxy).
+    const ORG_SOURCES = [
+      { name: 'VGDC', url: 'https://www.vgdc.dev/events' },
+      { name: 'WIC', url: 'https://wicucsd.vercel.app/events' }
+      // Add more orgs here later, e.g. { name: 'Robotics', url: '...' }
+    ];
+
+    let events = [];
+    let current = new Date(2026, 9, 1); // start on October 2026
+    let adminUnlocked = false;
+
+    // ========== STORAGE ==========
+    function loadEvents() {
+      const saved = localStorage.getItem('campusEvents');
+      if (saved) {
+        events = JSON.parse(saved);
+      } else {
+        events = [...SEEDED_EVENTS];
+        saveEvents();
+      }
+    }
+
+    function saveEvents() {
+      localStorage.setItem('campusEvents', JSON.stringify(events));
+    }
+
+    // ========== UI HELPERS ==========
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr + 'T12:00:00');
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    // ========== CALENDAR ==========
+    function renderCalendar() {
+      const year = current.getFullYear();
+      const month = current.getMonth();
+      document.getElementById('calMonthYear').textContent =
+        current.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const daysInPrev = new Date(year, month, 0).getDate();
+
+      const grid = document.getElementById('calGrid');
+      grid.innerHTML = '';
+
+      const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      dayNames.forEach(d => {
+        const el = document.createElement('div');
+        el.className = 'cal-day-name';
+        el.textContent = d;
+        grid.appendChild(el);
+      });
+
+      // previous month padding
+      for (let i = firstDay - 1; i >= 0; i--) {
+        const cell = document.createElement('div');
+        cell.className = 'cal-cell other-month';
+        cell.innerHTML = `<div class="cal-date">${daysInPrev - i}</div>`;
+        grid.appendChild(cell);
+      }
+
+      const today = new Date();
+      for (let day = 1; day <= daysInMonth; day++) {
+        const cell = document.createElement('div');
+        cell.className = 'cal-cell';
+        const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === day) {
+          cell.classList.add('today');
+        }
+        cell.innerHTML = `<div class="cal-date">${day}</div>`;
+
+        const dayEvents = events.filter(e => e.date === dateStr);
+        dayEvents.slice(0, 3).forEach(ev => {
+          const chip = document.createElement('div');
+          chip.className = 'cal-event' + (ev.isManual ? ' manual' : '');
+          chip.textContent = ev.title;
+          chip.title = `${ev.title} – ${ev.org}`;
+          cell.appendChild(chip);
+        });
+        if (dayEvents.length > 3) {
+          const more = document.createElement('div');
+          more.style.fontSize = '0.65rem';
+          more.style.color = 'var(--text-muted)';
+          more.textContent = `+${dayEvents.length - 3} more`;
+          cell.appendChild(more);
+        }
+        grid.appendChild(cell);
+      }
+    }
+
+    // ========== EVENT LIST ==========
+    function renderList() {
+      const list = document.getElementById('eventsList');
+      const sorted = [...events].sort((a, b) => b.date.localeCompare(a.date));
+
+      if (sorted.length === 0) {
+        list.innerHTML = '<p style="color:var(--text-muted); padding:2rem 0;">No events yet.</p>';
+        return;
+      }
+
+      list.innerHTML = sorted.map(ev => {
+        const d = new Date(ev.date + 'T12:00:00');
+        const month = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+        const day = d.getDate();
+        return `
+          <article class="event-card">
+            <div class="event-date-box">
+              <div class="month">${month}</div>
+              <div class="day">${day}</div>
+              <div class="time">${ev.time || ''}</div>
+            </div>
+            <div class="event-body">
+              <h3>${escapeHtml(ev.title)}</h3>
+              <div class="event-meta">
+                <span>📍 ${escapeHtml(ev.location || 'TBA')}</span>
+                <span>🏢 ${escapeHtml(ev.org)}</span>
+              </div>
+              <p class="event-desc">${escapeHtml(ev.description || '')}</p>
+              <div class="event-source">
+                ${ev.isManual
+                  ? '<span class="badge manual">Manual</span>'
+                  : `<span class="badge">Synced</span> · <a href="${ev.sourceUrl}" target="_blank" rel="noopener">Source</a>`}
+              </div>
+            </div>
+            ${adminUnlocked ? `<button class="btn btn-outline" style="padding:0.4rem 0.8rem; font-size:0.8rem;" onclick="deleteEvent('${ev.id}')">Delete</button>` : ''}
+          </article>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function deleteEvent(id) {
+      if (!confirm('Delete this event?')) return;
+      events = events.filter(e => e.id !== id);
+      saveEvents();
+      renderCalendar();
+      renderList();
+      showToast('Event deleted');
+    }
+
+    // ========== SYNC (simulated + real note) ==========
+    async function syncFromSources() {
+        showToast('Syncing from organization sites…');
+        try {
+            // Change this URL to your deployed API
+            const res = await fetch('http://localhost:3001/api/events');
+            // later: const res = await fetch('https://your-api.vercel.app/api/events');
+
+            if (!res.ok) throw new Error('Network response was not ok');
+            const remote = await res.json();
+
+            const manual = events.filter(e => e.isManual);
+            events = [...remote, ...manual];
+            saveEvents();
+            renderCalendar();
+            renderList();
+            showToast(`Synced ${remote.length} events`);
+        } catch (err) {
+            console.error(err);
+            showToast('Sync failed – using cached / seeded data');
+        }
+    }
+
+    // ========== ADMIN ==========
+    document.getElementById('adminToggle').addEventListener('click', () => {
+      if (adminUnlocked) {
+        document.getElementById('adminPanel').classList.add('visible');
+        return;
+      }
+      document.getElementById('passcodeBox').style.display = 'block';
+      document.getElementById('passcodeInput').focus();
+    });
+
+    document.getElementById('passcodeSubmit').addEventListener('click', () => {
+      const code = document.getElementById('passcodeInput').value.trim();
+      if (code === '9320786') {
+        adminUnlocked = true;
+        document.getElementById('passcodeBox').style.display = 'none';
+        document.getElementById('adminPanel').classList.add('visible');
+        renderList(); // show delete buttons
+        showToast('Admin unlocked');
+      } else {
+        showToast('Incorrect passcode');
+      }
+    });
+
+    document.getElementById('cancelAdmin').addEventListener('click', () => {
+      document.getElementById('adminPanel').classList.remove('visible');
+    });
+
+    document.getElementById('eventForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!adminUnlocked) return;
+
+      const newEvent = {
+        id: 'manual-' + Date.now(),
+        title: document.getElementById('evTitle').value.trim(),
+        org: document.getElementById('evOrg').value.trim(),
+        date: document.getElementById('evDate').value,
+        time: document.getElementById('evTime').value.trim(),
+        location: document.getElementById('evLocation').value.trim(),
+        description: document.getElementById('evDesc').value.trim(),
+        sourceUrl: document.getElementById('evUrl').value.trim() || null,
+        isManual: true
+      };
+
+      events.push(newEvent);
+      saveEvents();
+      renderCalendar();
+      renderList();
+      document.getElementById('eventForm').reset();
+      document.getElementById('adminPanel').classList.remove('visible');
+      showToast('Event added');
+    });
+
+    // ========== NAV ==========
+    document.getElementById('prevMonth').addEventListener('click', () => {
+      current.setMonth(current.getMonth() - 1);
+      renderCalendar();
+    });
+    document.getElementById('nextMonth').addEventListener('click', () => {
+      current.setMonth(current.getMonth() + 1);
+      renderCalendar();
+    });
+    document.getElementById('todayBtn').addEventListener('click', () => {
+      current = new Date();
+      renderCalendar();
+    });
+    document.getElementById('syncBtn').addEventListener('click', syncFromSources);
+
+    // ========== INIT ==========
+    loadEvents();
+    renderCalendar();
+    renderList();
+  </script>
+</body>
+</html>

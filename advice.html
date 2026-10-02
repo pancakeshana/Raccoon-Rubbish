@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advice Wall – Tips for New Students</title>
+  <style>
+    :root {
+      --navy: #0A2540;
+      --navy-light: #1E3A5F;
+      --light-blue: #7DD3FC;
+      --light-blue-soft: #E0F2FE;
+      --yellow: #FACC15;
+      --yellow-dark: #EAB308;
+      --sticky-yellow: #FEF08A;
+      --sticky-yellow-dark: #FDE047;
+      --white: #FFFFFF;
+      --bg: #F8FAFC;
+      --text: #0F172A;
+      --text-muted: #64748B;
+      --radius: 12px;
+      --shadow: 0 4px 6px -1px rgba(10, 37, 64, 0.1), 0 2px 4px -1px rgba(10, 37, 64, 0.06);
+      --shadow-hover: 0 10px 15px -3px rgba(10, 37, 64, 0.12), 0 4px 6px -2px rgba(10, 37, 64, 0.08);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow);
+    }
+
+    .header-content {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      text-decoration: none;
+      color: var(--white);
+    }
+
+    .logo span {
+      color: var(--yellow);
+    }
+
+    nav a {
+      color: rgba(255, 255, 255, 0.9);
+      text-decoration: none;
+      margin-left: 1.5rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    nav a:hover {
+      color: var(--yellow);
+    }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      color: var(--white);
+      padding: 3.5rem 2rem;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+      font-weight: 800;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      max-width: 560px;
+      margin: 0 auto;
+      opacity: 0.95;
+    }
+
+    /* Main */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    /* Form Card */
+    .form-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 2rem;
+      margin-bottom: 3rem;
+      border-top: 5px solid var(--yellow);
+    }
+
+    .form-card h2 {
+      color: var(--navy);
+      margin-bottom: 0.35rem;
+      font-size: 1.5rem;
+    }
+
+    .form-card .subtitle {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: var(--navy);
+      font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+      color: var(--text);
+      background: var(--white);
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--light-blue);
+    }
+
+    .form-group textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .submit-btn {
+      background: var(--navy);
+      color: var(--white);
+      border: none;
+      padding: 0.85rem 2rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .submit-btn:hover {
+      background: var(--navy-light);
+      transform: translateY(-1px);
+    }
+
+    .submit-btn:active {
+      transform: translateY(0);
+    }
+
+    /* Notes Section */
+    .notes-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .notes-header h2 {
+      color: var(--navy);
+      font-size: 1.5rem;
+    }
+
+    .note-count {
+      background: var(--light-blue-soft);
+      color: var(--navy);
+      padding: 0.35rem 0.9rem;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    /* Sticky Notes Grid */
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1.75rem;
+      perspective: 1000px;
+    }
+
+    .sticky-note {
+      background: var(--sticky-yellow);
+      padding: 1.4rem 1.3rem 1.6rem;
+      border-radius: 3px;
+      box-shadow: 3px 5px 12px rgba(0, 0, 0, 0.12);
+      position: relative;
+      transition: transform 0.25s, box-shadow 0.25s;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sticky-note::before {
+      content: "";
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 18px;
+      height: 18px;
+      background: radial-gradient(circle at 30% 30%, #fff 0%, #ccc 40%, #999 100%);
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    .sticky-note:hover {
+      transform: scale(1.03) rotate(0deg) !important;
+      box-shadow: 5px 8px 18px rgba(0, 0, 0, 0.18);
+      z-index: 10;
+    }
+
+    .sticky-note .note-text {
+      flex: 1;
+      font-size: 1.05rem;
+      line-height: 1.45;
+      color: #1e293b;
+      word-break: break-word;
+    }
+
+    .sticky-note .note-meta {
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: #64748b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sticky-note .author {
+      font-weight: 600;
+      color: var(--navy);
+    }
+
+    .delete-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0 4px;
+      transition: color 0.2s;
+      line-height: 1;
+    }
+
+    .delete-btn:hover {
+      color: #ef4444;
+    }
+
+    /* Empty state */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 3.5rem 1rem;
+      color: var(--text-muted);
+    }
+
+    .empty-state .emoji {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Footer */
+    footer {
+      background: var(--navy);
+      color: var(--white);
+      text-align: center;
+      padding: 2rem;
+      margin-top: auto;
+    }
+
+    footer p {
+      opacity: 0.85;
+      font-size: 0.9rem;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--navy);
+      color: var(--white);
+      padding: 0.85rem 1.75rem;
+      border-radius: 50px;
+      font-weight: 600;
+      box-shadow: var(--shadow-hover);
+      opacity: 0;
+      transition: all 0.35s ease;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .hero h1 {
+        font-size: 1.9rem;
+      }
+
+      .header-content {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      nav a {
+        margin: 0 0.7rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <a href="student-organizations.html" class="logo">Campus<span>Connect</span></a>
+      <nav>
+        <a href="student-organizations.html">Organizations</a>
+        <a href="#wall">Advice Wall</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Advice Wall</h1>
+    <p>Share the wisdom you wish someone had told you on day one. Help the next generation of students feel at home.</p>
+  </section>
+
+  <main>
+    <!-- Submission Form -->
+    <div class="form-card">
+      <h2>Leave a Sticky Note</h2>
+      <p class="subtitle">Your tip could make someone’s first week a little easier.</p>
+
+      <form id="adviceForm">
+        <div class="form-group">
+          <label for="adviceText">Your Advice</label>
+          <textarea id="adviceText" placeholder="e.g. Don’t be afraid to sit in the front row — professors notice..." required maxlength="280"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="authorName">Your Name (optional)</label>
+            <input type="text" id="authorName" placeholder="Anonymous" maxlength="40">
+          </div>
+          <div class="form-group">
+            <label for="noteColor">Note Color</label>
+            <select id="noteColor" style="width:100%; padding:0.75rem 1rem; border:2px solid #E2E8F0; border-radius:8px; font-size:1rem; background:white;">
+              <option value="#FEF08A">Classic Yellow</option>
+              <option value="#BAE6FD">Sky Blue</option>
+              <option value="#BBF7D0">Fresh Green</option>
+              <option value="#FBCFE8">Soft Pink</option>
+              <option value="#E9D5FF">Lavender</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="submit-btn">
+          <span>📌</span> Pin Your Advice
+        </button>
+      </form>
+    </div>
+
+    <!-- Notes Display -->
+    <div class="notes-header" id="wall">
+      <h2>Community Wisdom</h2>
+      <span class="note-count" id="noteCount">0 notes</span>
+    </div>
+
+    <div class="notes-grid" id="notesGrid">
+      <!-- Sticky notes appear here -->
+    </div>
+  </main>
+
+  <footer>
+    <p>Campus Connect • Advice Wall</p>
+    <p style="margin-top:0.4rem;">Helping new students feel at home since day one</p>
+  </footer>
+
+  <div class="toast" id="toast">Advice pinned successfully!</div>
+
+  <script>
+    const form = document.getElementById('adviceForm');
+    const notesGrid = document.getElementById('notesGrid');
+    const noteCountEl = document.getElementById('noteCount');
+    const toast = document.getElementById('toast');
+
+    // Sample starter notes
+    const starterNotes = [
+      {
+        id: 1,
+        text: "Join at least one club in your first month. The friends you make there will get you through the hard weeks.",
+        author: "Jordan, Class of '24",
+        color: "#FEF08A",
+        date: "2025-09-12"
+      },
+      {
+        id: 2,
+        text: "Talk to your professors during office hours even if you don’t have a question. It makes a huge difference later.",
+        author: "Samira",
+        color: "#BAE6FD",
+        date: "2025-09-18"
+      },
+      {
+        id: 3,
+        text: "The dining hall is less crowded after 7:30 pm. Trust me.",
+        author: "Anonymous",
+        color: "#BBF7D0",
+        date: "2025-09-20"
+      },
+      {
+        id: 4,
+        text: "Don’t buy all your textbooks on day one. Check the library and wait for the first week of classes.",
+        author: "Chris",
+        color: "#FBCFE8",
+        date: "2025-09-22"
+      }
+    ];
+
+    // Load notes from localStorage or use starters
+    function loadNotes() {
+      const saved = localStorage.getItem('campusAdviceNotes');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+      localStorage.setItem('campusAdviceNotes', JSON.stringify(starterNotes));
+      return starterNotes;
+    }
+
+    let notes = loadNotes();
+
+    function saveNotes() {
+      localStorage.setItem('campusAdviceNotes', JSON.stringify(notes));
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2600);
+    }
+
+    function getRandomRotation() {
+      return (Math.random() * 6 - 3).toFixed(1); // -3deg to +3deg
+    }
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function renderNotes() {
+      notesGrid.innerHTML = '';
+
+      if (notes.length === 0) {
+        notesGrid.innerHTML = `
+          <div class="empty-state">
+            <div class="emoji">📝</div>
+            <p>No advice yet. Be the first to leave a sticky note!</p>
+          </div>
+        `;
+        noteCountEl.textContent = '0 notes';
+        return;
+      }
+
+      // Newest first
+      const sorted = [...notes].sort((a, b) => b.id - a.id);
+
+      sorted.forEach(note => {
+        const rotation = getRandomRotation();
+        const el = document.createElement('article');
+        el.className = 'sticky-note';
+        el.style.background = note.color;
+        el.style.transform = `rotate(${rotation}deg)`;
+
+        el.innerHTML = `
+          <div class="note-text">${escapeHtml(note.text)}</div>
+          <div class="note-meta">
+            <span class="author">— ${escapeHtml(note.author || 'Anonymous')}</span>
+            <div>
+              <span style="margin-right:8px; opacity:0.7;">${formatDate(note.date)}</span>
+              <button class="delete-btn" title="Remove note" data-id="${note.id}">×</button>
+            </div>
+          </div>
+        `;
+        notesGrid.appendChild(el);
+      });
+
+      noteCountEl.textContent = `${notes.length} note${notes.length !== 1 ? 's' : ''}`;
+
+      // Attach delete handlers
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = Number(e.target.dataset.id);
+          if (confirm('Remove this sticky note?')) {
+            notes = notes.filter(n => n.id !== id);
+            saveNotes();
+            renderNotes();
+            showToast('Note removed');
+          }
+        });
+      });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const text = document.getElementById('adviceText').value.trim();
+      const author = document.getElementById('authorName').value.trim() || 'Anonymous';
+      const color = document.getElementById('noteColor').value;
+
+      if (!text) return;
+
+      const newNote = {
+        id: Date.now(),
+        text,
+        author,
+        color,
+        date: new Date().toISOString().split('T')[0]
+      };
+
+      notes.push(newNote);
+      saveNotes();
+      renderNotes();
+      form.reset();
+      showToast('Advice pinned successfully! 📌');
+    });
+
+    // Initial render
+    renderNotes();
+  </script>
+</body>
+</html>
