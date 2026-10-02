@@ -636,7 +636,7 @@
         showToast('Syncing from organization sites…');
         try {
             // Change this URL to your deployed API
-            const res = await fetch('http://localhost:3001/api/events');
+            const res = await fetch('https://cse-raccoon-tips.vercel.app/api/events');
             // later: const res = await fetch('https://your-api.vercel.app/api/events');
 
             if (!res.ok) throw new Error('Network response was not ok');
