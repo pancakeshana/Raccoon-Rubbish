@@ -60,7 +60,7 @@ async function scrapeACM() {
         id: 'acm-bitbyte-2026',
         title: 'Bit-Byte Info Session',
         org: 'ACM',
-        date: '2026-10-03',
+        date: '2026-10-02',
         time: '5:00 PM - 7:00 PM',
         location: 'Qualcomm Room',
         description: 'Bit-Byte Info Session',
