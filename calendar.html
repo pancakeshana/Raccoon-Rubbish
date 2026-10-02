@@ -659,7 +659,7 @@
     function renderList() {
         const list = document.getElementById('eventsList');
         const filtered = getFilteredEvents();
-        const sorted = [...filtered].sort((a, b) => b.date.localeCompare(a.date));
+        const sorted = [...filtered].sort((a, b) => a.date.localeCompare(b.date));
 
         if (sorted.length === 0) {
             list.innerHTML = '<p style="color:var(--text-muted); padding:2rem 0;">No events match this filter.</p>';
