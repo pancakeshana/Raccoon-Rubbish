@@ -1,3 +1,28 @@
+module.exports = async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // Temporary test response
+  return res.status(200).json([
+    {
+      id: "test-1",
+      title: "API is working!",
+      org: "Test",
+      date: "2026-10-05",
+      time: "12:00 PM",
+      location: "Online",
+      description: "If you see this, the serverless function is deployed correctly.",
+      sourceUrl: "https://cse-raccoon-tips.vercel.app",
+      isManual: false
+    }
+  ]);
+};
+
+/*
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
 const ical = require('node-ical');
@@ -174,3 +199,4 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: 'Failed to fetch events' });
   }
 };
+*/
