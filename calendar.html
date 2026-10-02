@@ -397,7 +397,12 @@
         <button class="btn btn-outline" id="nextMonth" style="margin-left:0.5rem;">→</button>
         <button class="btn" id="todayBtn" style="margin-left:0.75rem;">Today</button>
       </div>
-      <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+      <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
+        <select id="filterSelect" class="btn btn-outline" style="padding:0.6rem 1rem; cursor:pointer;">
+            <option value="all">All Events</option>
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+        </select>
         <button class="btn btn-yellow" id="syncBtn">↻ Sync from Org Sites</button>
         <button class="btn" id="adminToggle">+ Add Event (Admin)</button>
       </div>
@@ -526,6 +531,7 @@
     let events = [];
     let current = new Date(2026, 9, 1); // start on October 2026
     let adminUnlocked = false;
+    let currentFilter = 'all';
 
     // ========== STORAGE ==========
     function loadEvents() {
@@ -598,8 +604,8 @@
         const dayEvents = events.filter(e => e.date === dateStr);
         dayEvents.slice(0, 3).forEach(ev => {
             const chip = document.createElement('div');
-            
-            // Color class based on organization
+
+            // Color class
             let orgClass = 'manual';
             if (!ev.isManual) {
                 const org = (ev.org || '').toLowerCase();
@@ -607,10 +613,23 @@
                 else if (org.includes('acm')) orgClass = 'acm';
                 else if (org.includes('wic')) orgClass = 'wic';
             }
-            
+
             chip.className = `cal-event ${orgClass}`;
-            chip.textContent = ev.title;
-            chip.title = `${ev.title} – ${ev.org}`;   // full title on hover
+            chip.textContent = ev.title.length > 18 ? ev.title.slice(0, 16) + '…' : ev.title;
+            chip.title = `${ev.title} – ${ev.org}`;
+            chip.style.cursor = 'pointer';
+
+            // Click → scroll to the event card
+            chip.addEventListener('click', () => {
+                const target = document.getElementById(`event-${ev.id}`);
+                if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // brief highlight
+                target.style.outline = '3px solid var(--yellow)';
+                setTimeout(() => target.style.outline = '', 1500);
+                }
+            });
+
             cell.appendChild(chip);
         });
 
@@ -627,42 +646,43 @@
 
     // ========== EVENT LIST ==========
     function renderList() {
-      const list = document.getElementById('eventsList');
-      const sorted = [...events].sort((a, b) => b.date.localeCompare(a.date));
+        const list = document.getElementById('eventsList');
+        const filtered = getFilteredEvents();
+        const sorted = [...filtered].sort((a, b) => b.date.localeCompare(a.date));
 
-      if (sorted.length === 0) {
-        list.innerHTML = '<p style="color:var(--text-muted); padding:2rem 0;">No events yet.</p>';
-        return;
-      }
+        if (sorted.length === 0) {
+            list.innerHTML = '<p style="color:var(--text-muted); padding:2rem 0;">No events match this filter.</p>';
+            return;
+        }
 
-      list.innerHTML = sorted.map(ev => {
-        const d = new Date(ev.date + 'T12:00:00');
-        const month = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
-        const day = d.getDate();
-        return `
-          <article class="event-card">
-            <div class="event-date-box">
-              <div class="month">${month}</div>
-              <div class="day">${day}</div>
-              <div class="time">${ev.time || ''}</div>
-            </div>
-            <div class="event-body">
-              <h3>${escapeHtml(ev.title)}</h3>
-              <div class="event-meta">
-                <span>📍 ${escapeHtml(ev.location || 'TBA')}</span>
-                <span>🏢 ${escapeHtml(ev.org)}</span>
-              </div>
-              <p class="event-desc">${escapeHtml(ev.description || '')}</p>
-              <div class="event-source">
-                ${ev.isManual
-                  ? '<span class="badge manual">Manual</span>'
-                  : `<span class="badge">Synced</span> · <a href="${ev.sourceUrl}" target="_blank" rel="noopener">Source</a>`}
-              </div>
-            </div>
-            ${adminUnlocked ? `<button class="btn btn-outline" style="padding:0.4rem 0.8rem; font-size:0.8rem;" onclick="deleteEvent('${ev.id}')">Delete</button>` : ''}
-          </article>
-        `;
-      }).join('');
+        list.innerHTML = sorted.map(ev => {
+            const d = new Date(ev.date + 'T12:00:00');
+            const month = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+            const day = d.getDate();
+            return `
+            <article class="event-card" id="event-${ev.id}" data-org="${ev.isManual ? 'Manual' : escapeHtml(ev.org)}">
+                <div class="event-date-box">
+                <div class="month">${month}</div>
+                <div class="day">${day}</div>
+                <div class="time">${ev.time || ''}</div>
+                </div>
+                <div class="event-body">
+                <h3>${escapeHtml(ev.title)}</h3>
+                <div class="event-meta">
+                    <span>📍 ${escapeHtml(ev.location || 'TBA')}</span>
+                    <span>🏢 ${escapeHtml(ev.org)}</span>
+                </div>
+                <p class="event-desc">${escapeHtml(ev.description || '')}</p>
+                <div class="event-source">
+                    ${ev.isManual
+                    ? '<span class="badge manual">Manual</span>'
+                    : `<span class="badge">Synced</span> · <a href="${ev.sourceUrl}" target="_blank" rel="noopener">Source</a>`}
+                </div>
+                </div>
+                ${adminUnlocked ? `<button class="btn btn-outline" style="padding:0.4rem 0.8rem; font-size:0.8rem;" onclick="deleteEvent('${ev.id}')">Delete</button>` : ''}
+            </article>
+            `;
+        }).join('');
     }
 
     function escapeHtml(str) {
@@ -679,6 +699,29 @@
       renderCalendar();
       renderList();
       showToast('Event deleted');
+    }
+
+    function getFilteredEvents() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay()); // Sunday
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+
+        return events.filter(ev => {
+            const evDate = new Date(ev.date + 'T12:00:00');
+
+            if (currentFilter === 'today') {
+            return evDate.toDateString() === today.toDateString();
+            }
+            if (currentFilter === 'week') {
+            return evDate >= startOfWeek && evDate <= endOfWeek;
+            }
+            return true; // 'all'
+        });
     }
 
     // ========== SYNC (simulated + real note) ==========
@@ -768,6 +811,10 @@
     document.getElementById('todayBtn').addEventListener('click', () => {
       current = new Date();
       renderCalendar();
+    });
+    document.getElementById('filterSelect').addEventListener('change', (e) => {
+      currentFilter = e.target.value;
+      renderList();
     });
     document.getElementById('syncBtn').addEventListener('click', syncFromSources);
 
