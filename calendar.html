@@ -332,6 +332,34 @@
       .cal-cell { min-height: 60px; font-size: 0.75rem; }
       nav a { margin-left: 0.8rem; }
     }
+
+    /*Color Code Organizations*/
+    .cal-event.vgdc   { background: #0A2540; }      
+    .cal-event.acm    { background: #2563EB; }         
+    .cal-event.wic    { background: #7C3AED; }         
+    .cal-event.manual { background: var(--yellow); color: var(--navy); }
+
+    /*Color Code Event Cards*/
+    .event-card[data-org="VGDC"] .event-date-box { background: #0A2540; }
+    .event-card[data-org="ACM"]  .event-date-box { background: #2563EB; }
+    .event-card[data-org="WIC"]  .event-date-box { background: #7C3AED; }
+    .event-card[data-org="Manual"] .event-date-box { background: var(--yellow);
+
+    /*So that the event chips are not extremely long.*/
+    .cal-event {
+        background: var(--navy);
+        color: white;
+        font-size: 0.65rem;
+        padding: 2px 4px;
+        border-radius: 4px;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        display: block;
+        line-height: 1.3;
+    }
   </style>
 </head>
 <body>
@@ -558,12 +586,23 @@
 
         const dayEvents = events.filter(e => e.date === dateStr);
         dayEvents.slice(0, 3).forEach(ev => {
-          const chip = document.createElement('div');
-          chip.className = 'cal-event' + (ev.isManual ? ' manual' : '');
-          chip.textContent = ev.title;
-          chip.title = `${ev.title} – ${ev.org}`;
-          cell.appendChild(chip);
+            const chip = document.createElement('div');
+            
+            // Color class based on organization
+            let orgClass = 'manual';
+            if (!ev.isManual) {
+                const org = (ev.org || '').toLowerCase();
+                if (org.includes('vgdc')) orgClass = 'vgdc';
+                else if (org.includes('acm')) orgClass = 'acm';
+                else if (org.includes('wic')) orgClass = 'wic';
+            }
+            
+            chip.className = `cal-event ${orgClass}`;
+            chip.textContent = ev.title;
+            chip.title = `${ev.title} – ${ev.org}`;   // full title on hover
+            cell.appendChild(chip);
         });
+        
         if (dayEvents.length > 3) {
           const more = document.createElement('div');
           more.style.fontSize = '0.65rem';
