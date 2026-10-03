@@ -4,16 +4,12 @@ const fetch = require('node-fetch');
 const cheerio = require('cheerio');
 const ical = require('node-ical');
 const NodeCache = require('node-cache');
-const calendarAdminHandler = require('./api/calendar-admin');
 
 const app = express();
 const cache = new NodeCache({ stdTTL: 60 * 30 }); // cache 30 minutes
 const WIC_TIME_ZONE = 'America/Los_Angeles';
 
 app.use(cors()); // allow your frontend origin
-app.use(express.json({ limit: '1kb' }));
-
-app.post('/api/calendar-admin', calendarAdminHandler);
 
 // ---------- Helpers ----------
 function normalizeEvent({ id, title, org, date, time, location, description, sourceUrl }) {
