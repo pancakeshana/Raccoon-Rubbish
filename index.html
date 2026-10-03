@@ -214,16 +214,19 @@
       height: 160px;
       overflow: hidden;
       background: var(--navy-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
     }
 
     .org-card .card-header img {
-      /*width: 100%;*/
-      height: 100%;
-      object-fit: cover;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
       display: block;
       transition: transform 0.35s ease;
-      align-items: center;
-      margin: auto;
+      margin: 0 auto;
     }
 
     .org-card:hover .card-header img {
@@ -274,28 +277,27 @@
 
     .org-card .card-footer {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-end;
       align-items: center;
       font-size: 0.875rem;
       color: var(--text-muted);
     }
 
-    .org-card .members {
-      font-weight: 600;
-    }
-
-    .join-btn {
+    .website-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       background: var(--navy);
       color: var(--white);
-      border: none;
-      padding: 0.5rem 1.25rem;
+      text-decoration: none;
+      padding: 0.55rem 1.2rem;
       border-radius: 6px;
       font-weight: 600;
-      cursor: pointer;
       transition: background 0.2s;
+      font-size: 0.9rem;
     }
 
-    .join-btn:hover {
+    .website-btn:hover {
       background: var(--navy-light);
     }
 
@@ -382,8 +384,9 @@
         category: "women",
         imageBackgroundColor: "#D6D0F5",
         image: "https://cse.ucsd.edu/sites/default/files/ug-wic-logo.png",
-        description: "{Ladies} by day, {hackers} by night.",
-        members: 86
+        description: "Coders and engineers, of all genders, who support the female presence in computing.",
+        members: 86,
+        website: "https://wicucsd.vercel.app/"
       },
       {
         name: "CSE-PACE",
@@ -391,7 +394,8 @@
         imageBackgroundColor: "#0A2540",
         image: "https://csepace.ucsd.edu/images/logo/Logo-banner.png",
         description: "Design, build, and program robots. Participate in competitions and workshops.",
-        members: 124
+        members: 124,
+        website: "https://csepace.ucsd.edu/"
       },
       {
         name: "Association for Computing Machinery (ACM)",
@@ -399,7 +403,8 @@
         imageBackgroundColor: "#EAE6FF",
         image: "https://acmucsd.com/_next/static/media/ACMWhiteLogo.d5982921.png",
         description: "Lead campus sustainability initiatives, tree plantings, and awareness campaigns.",
-        members: 97
+        members: 97,
+        website: "https://acmucsd.com/"
       },
       {
         name: "Video Game Development Club",
@@ -407,7 +412,8 @@
         imageBackgroundColor: "#0A2540",
         image: "https://img.itch.zone/aW1nLzQ0NTA4MDgucG5n/original/%2FnEYG%2F.png",
         description: "Act, direct, design, or work backstage in our semester productions.",
-        members: 68
+        members: 68,
+        website: "https://www.vgdc.dev/"
       }
     ];
 
@@ -445,8 +451,7 @@
             <h3>${org.name}</h3>
             <p>${org.description}</p>
             <div class="card-footer">
-              <span class="members">${org.members} members</span>
-              <button class="join-btn">Join</button>
+              <a class="website-btn" href="${org.website || '#'}" target="_blank" rel="noopener noreferrer">Website</a>
             </div>
           </div>
         `;
