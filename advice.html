@@ -453,35 +453,11 @@
     const notesGrid = document.getElementById('notesGrid');
     const noteCountEl = document.getElementById('noteCount');
     const toast = document.getElementById('toast');
-    const STORAGE_KEY = 'raccoon-tips-demo-notes';
 
     const submitButton = form.querySelector('[type="submit"]');
     let notes = [];
     let turnstileToken = '';
     let turnstileWidgetId = null;
-
-    function isLocalDemoMode() {
-      const host = window.location.hostname;
-      return host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local');
-    }
-
-    function readDemoNotes() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : [];
-      } catch (error) {
-        console.warn('Could not read demo notes from localStorage', error);
-        return [];
-      }
-    }
-
-    function writeDemoNotes() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
-      } catch (error) {
-        console.warn('Could not save demo notes to localStorage', error);
-      }
-    }
 
     function showToast(message) {
       toast.textContent = message;
@@ -522,12 +498,6 @@
         renderNotes();
 
         if (!result.turnstileSiteKey) {
-          if (isLocalDemoMode()) {
-            submitButton.disabled = false;
-            turnstileToken = 'demo-local';
-            showToast('Demo mode enabled for local testing');
-            return;
-          }
           showToast('Note submissions are not configured yet');
           return;
         }
@@ -552,15 +522,6 @@
         });
       } catch (error) {
         console.error(error);
-        if (isLocalDemoMode()) {
-          notes = readDemoNotes();
-          renderNotes();
-          submitButton.disabled = false;
-          turnstileToken = 'demo-local';
-          showToast('Demo mode enabled for local testing');
-          return;
-        }
-
         notesGrid.innerHTML = '<p class="empty-state">Community notes could not be loaded. Please try again later.</p>';
         noteCountEl.textContent = 'Unavailable';
         submitButton.disabled = true;
@@ -621,32 +582,13 @@
       const color = document.getElementById('noteColor').value;
 
       if (!text) return;
-      const isDemoSubmission = isLocalDemoMode() && turnstileToken === 'demo-local';
-      if (!isDemoSubmission && !turnstileToken) {
+      if (!turnstileToken) {
         showToast('Complete the human verification challenge first');
         return;
       }
 
       submitButton.disabled = true;
       try {
-        if (isDemoSubmission) {
-          const newNote = {
-            id: `demo-${Date.now()}`,
-            text,
-            author,
-            color,
-            date: new Date().toISOString().slice(0, 10),
-            createdAt: Date.now()
-          };
-
-          notes.unshift(newNote);
-          writeDemoNotes();
-          renderNotes();
-          form.reset();
-          showToast('Advice pinned successfully! 📌');
-          return;
-        }
-
         const response = await fetch('/api/advice', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -663,7 +605,7 @@
         console.error(error);
         showToast(error.message || 'Could not save your advice');
       } finally {
-        turnstileToken = isLocalDemoMode() ? 'demo-local' : '';
+        turnstileToken = '';
         if (window.turnstile && turnstileWidgetId !== null) {
           window.turnstile.reset(turnstileWidgetId);
         }
