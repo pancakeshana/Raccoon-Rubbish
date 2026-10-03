@@ -94,8 +94,6 @@ async function scrapeACM() {
   const $ = cheerio.load(html);
   const events = [];
 
-  // ACM renders events with month/day headings
-  // This is a simplified example – inspect the live HTML and adjust selectors
   $('h3, [class*="event"]').each((i, el) => {
     const text = $(el).text().trim();
     if (text.length > 5 && text.length < 80) {
@@ -103,7 +101,6 @@ async function scrapeACM() {
     }
   });
 
-  // Reliable seed from current page content
   const known = [
     {
       id: 'acm-census-2026',
@@ -138,6 +135,130 @@ async function scrapeACM() {
   ];
 
   return known.map(normalizeEvent);
+}
+
+// ---------- CSES / SATUCSD scraper ----------
+async function scrapeCSES() {
+  const url = 'https://csesatucsd.com/events';
+  const fallbackEvents = [
+    {
+      id: 'cses-open-source-innovate-dev-2026-10-05',
+      title: 'Open-Source Innovate Dev',
+      org: 'CSES',
+      date: '2026-10-05',
+      time: '6:00 PM - 7:00 PM',
+      location: 'CSE 2154',
+      description: 'Open-Source Innovate Dev event highlighted on the CSES events page.',
+      sourceUrl: url
+    },
+    {
+      id: 'cses-fast-enterprises-info-session-2026-10-05',
+      title: 'Fast Enterprises Info Session',
+      org: 'CSES',
+      date: '2026-10-05',
+      time: '6:00 PM - 7:00 PM',
+      location: 'CSE 2154',
+      description: 'Fast Enterprises info session hosted by CSES.',
+      sourceUrl: url
+    },
+    {
+      id: 'cses-system-design-workshop-2026-10-06',
+      title: 'System Design Workshop',
+      org: 'CSES',
+      date: '2026-10-06',
+      time: '6:00 PM - 7:00 PM',
+      location: 'Price Center',
+      description: 'System Design workshop hosted by CSES.',
+      sourceUrl: url
+    },
+    {
+      id: 'cses-fall-gbm-2026-10-12',
+      title: 'CSES Fall GBM',
+      org: 'CSES',
+      date: '2026-10-12',
+      time: '5:00 PM - 7:00 PM',
+      location: 'TBA',
+      description: 'CSES Fall general body meeting.',
+      sourceUrl: url
+    },
+    {
+      id: 'cses-shake-smart-fundraiser-2026-10-22',
+      title: 'Shake Smart Fundraiser',
+      org: 'CSES',
+      date: '2026-10-22',
+      time: 'All day',
+      location: 'TBA',
+      description: 'CSES fundraiser event.',
+      sourceUrl: url
+    },
+    {
+      id: 'cses-welcome-new-members-2026-10-22',
+      title: 'Welcome New Members',
+      org: 'CSES',
+      date: '2026-10-22',
+      time: '5:00 PM - 6:00 PM',
+      location: 'TBA',
+      description: 'Welcome event for new members.',
+      sourceUrl: url
+    },
+    {
+      id: 'cses-code-review-2026-11-05',
+      title: 'Code Review',
+      org: 'CSES',
+      date: '2026-11-05',
+      time: '6:00 PM - 7:00 PM',
+      location: 'TBA',
+      description: 'CSES code review session.',
+      sourceUrl: url
+    }
+  ];
+
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    if (!res.ok) return fallbackEvents.map(normalizeEvent);
+
+    const html = await res.text();
+    const text = html
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const eventText = text.match(/Upcoming Events.*?(?:\.|$)/i)?.[0] || text;
+    const matches = [...eventText.matchAll(/([A-Za-z0-9&/()'’.-]+?)\s+(?:General\s+)?(October|November|December)\s+(\d{1,2}),\s+(\d{4})(?:\s+((?:\d{1,2}:\d{2}\s*(?:AM|PM)?(?:\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM)?)?)|All day))?/gi)];
+
+    if (matches.length === 0) return fallbackEvents.map(normalizeEvent);
+
+    const events = [];
+    const seen = new Set();
+    for (const match of matches) {
+      const [, rawTitle, month, day, year, timeText] = match;
+      const title = (rawTitle || '').replace(/^General\s+/i, '').replace(/\s+General$/i, '').replace(/\s+/g, ' ').trim();
+      if (!title || title.length < 4 || seen.has(`${title}|${month}|${day}|${year}`)) continue;
+      const monthNumber = new Date(`${month} 1, ${year}`).getMonth() + 1;
+      const date = `${year}-${String(monthNumber).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      events.push(normalizeEvent({
+        id: `cses-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}-${date}`,
+        title,
+        org: 'CSES',
+        date,
+        time: timeText || 'All day',
+        location: 'TBA',
+        description: `CSES event posted on ${url}`,
+        sourceUrl: url
+      }));
+      seen.add(`${title}|${month}|${day}|${year}`);
+    }
+
+    return events.length > 0 ? events : fallbackEvents.map(normalizeEvent);
+  } catch (err) {
+    console.error('CSES failed:', err.message);
+    return fallbackEvents.map(normalizeEvent);
+  }
 }
 
 // ---------- WIC via Google Calendar ICS (best method) ----------
@@ -180,13 +301,14 @@ app.get('/api/events', async (req, res) => {
     const cached = cache.get('all-events');
     if (cached) return res.json(cached);
 
-    const [vgdc, acm, wic] = await Promise.all([
+    const [vgdc, acm, cses, wic] = await Promise.all([
       scrapeVGDC().catch(e => { console.error('VGDC failed', e); return []; }),
       scrapeACM().catch(e => { console.error('ACM failed', e); return []; }),
+      scrapeCSES().catch(e => { console.error('CSES failed', e); return []; }),
       scrapeWIC().catch(e => { console.error('WIC failed', e); return []; })
     ]);
 
-    const all = [...vgdc, ...acm, ...wic];
+    const all = [...vgdc, ...acm, ...cses, ...wic];
 
     // Deduplicate by title + date (simple)
     const seen = new Set();

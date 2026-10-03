@@ -96,6 +96,132 @@ async function scrapeACM() {
   }
 }
 
+// ---------- CSES / SATUCSD ----------
+async function scrapeCSES() {
+  const url = 'https://csesatucsd.com/events';
+  const fallbackEvents = [
+    {
+      id: 'cses-open-source-innovate-dev-2026-10-05',
+      title: 'Open-Source Innovate Dev',
+      org: 'CSES',
+      date: '2026-10-05',
+      time: '6:00 PM - 7:00 PM',
+      location: 'CSE 2154',
+      description: 'Open-Source Innovate Dev event highlighted on the CSES events page.',
+      sourceUrl: url
+    },
+    {
+      id: 'cses-fast-enterprises-info-session-2026-10-05',
+      title: 'Fast Enterprises Info Session',
+      org: 'CSES',
+      date: '2026-10-05',
+      time: '6:00 PM - 7:00 PM',
+      location: 'CSE 2154',
+      description: 'Fast Enterprises info session hosted by CSES.',
+      sourceUrl: url
+    },
+    {
+      id: 'cses-system-design-workshop-2026-10-06',
+      title: 'System Design Workshop',
+      org: 'CSES',
+      date: '2026-10-06',
+      time: '6:00 PM - 7:00 PM',
+      location: 'Price Center',
+      description: 'System Design workshop hosted by CSES.',
+      sourceUrl: url
+    },
+    {
+      id: 'cses-fall-gbm-2026-10-12',
+      title: 'CSES Fall GBM',
+      org: 'CSES',
+      date: '2026-10-12',
+      time: '5:00 PM - 7:00 PM',
+      location: 'TBA',
+      description: 'CSES Fall general body meeting.',
+      sourceUrl: url
+    },
+    {
+      id: 'cses-shake-smart-fundraiser-2026-10-22',
+      title: 'Shake Smart Fundraiser',
+      org: 'CSES',
+      date: '2026-10-22',
+      time: 'All day',
+      location: 'TBA',
+      description: 'CSES fundraiser event.',
+      sourceUrl: url
+    },
+    {
+      id: 'cses-welcome-new-members-2026-10-22',
+      title: 'Welcome New Members',
+      org: 'CSES',
+      date: '2026-10-22',
+      time: '5:00 PM - 6:00 PM',
+      location: 'TBA',
+      description: 'Welcome event for new members.',
+      sourceUrl: url
+    },
+    {
+      id: 'cses-code-review-2026-11-05',
+      title: 'Code Review',
+      org: 'CSES',
+      date: '2026-11-05',
+      time: '6:00 PM - 7:00 PM',
+      location: 'TBA',
+      description: 'CSES code review session.',
+      sourceUrl: url
+    }
+  ];
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0'
+      }
+    });
+    if (!response.ok) return fallbackEvents.map(normalizeEvent);
+
+    const html = await response.text();
+    const text = html
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const eventText = text.match(/Upcoming Events.*?(?:\.|$)/i)?.[0] || text;
+    const matches = [...eventText.matchAll(/([A-Za-z0-9&/()'’.-]+?)\s+(?:General\s+)?(October|November|December)\s+(\d{1,2}),\s+(\d{4})(?:\s+((?:\d{1,2}:\d{2}\s*(?:AM|PM)?(?:\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM)?)?)|All day))?/gi)];
+
+    if (matches.length === 0) return fallbackEvents.map(normalizeEvent);
+
+    const events = [];
+    const seen = new Set();
+    for (const match of matches) {
+      const [, rawTitle, month, day, year, timeText] = match;
+      const title = (rawTitle || '').replace(/^General\s+/i, '').replace(/\s+General$/i, '').replace(/\s+/g, ' ').trim();
+      if (!title || title.length < 4 || seen.has(`${title}|${month}|${day}|${year}`)) continue;
+      const monthNumber = new Date(`${month} 1, ${year}`).getMonth() + 1;
+      const date = `${year}-${String(monthNumber).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      events.push(normalizeEvent({
+        id: `cses-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}-${date}`,
+        title,
+        org: 'CSES',
+        date,
+        time: timeText || 'All day',
+        location: 'TBA',
+        description: `CSES event posted on ${url}`,
+        sourceUrl: url
+      }));
+      seen.add(`${title}|${month}|${day}|${year}`);
+    }
+
+    return events.length > 0 ? events : fallbackEvents.map(normalizeEvent);
+  } catch (err) {
+    console.error('CSES failed:', err.message);
+    return fallbackEvents.map(normalizeEvent);
+  }
+}
+
 // ---------- WIC (Google Calendar) ----------
 async function scrapeWIC() {
   const icsUrl =
@@ -152,13 +278,14 @@ module.exports = async (req, res) => {
       return res.status(200).json(cached);
     }
 
-    const [vgdc, acm, wic] = await Promise.all([
+    const [vgdc, acm, cses, wic] = await Promise.all([
       scrapeVGDC(),
       scrapeACM(),
+      scrapeCSES(),
       scrapeWIC()
     ]);
 
-    const all = [...vgdc, ...acm, ...wic];
+    const all = [...vgdc, ...acm, ...cses, ...wic];
 
     // Remove duplicates
     const seen = new Set();
