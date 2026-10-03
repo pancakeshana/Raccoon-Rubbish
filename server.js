@@ -154,16 +154,6 @@ async function scrapeCSES() {
   ]);
   const fallbackEvents = [
     {
-      id: 'cses-open-source-innovate-dev-2026-10-05',
-      title: 'Open-Source Innovate Dev',
-      org: 'CSES',
-      date: '2026-10-05',
-      time: '6:00 PM - 7:00 PM',
-      location: 'CSE 2154',
-      description: 'Open-Source Innovate Dev event highlighted on the CSES events page.',
-      sourceUrl: url
-    },
-    {
       id: 'cses-fast-enterprises-info-session-2026-10-05',
       title: 'Fast Enterprises Info Session',
       org: 'CSES',
