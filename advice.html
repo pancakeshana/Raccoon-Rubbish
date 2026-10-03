@@ -381,6 +381,7 @@
     }
   </style>
 </head>
+
 <body>
   <header>
     <div class="header-content">
@@ -452,59 +453,19 @@
 
   <div class="toast" id="toast">Advice pinned successfully!</div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+    const db = supabase.createClient(
+      "https://tqpqnhtatezigaqqdowx.supabase.co",
+      "sb_publishable_qq_Q7hgYvlvELFlDHwixDw_i-sadf9-"
+    );
+
     const form = document.getElementById('adviceForm');
     const notesGrid = document.getElementById('notesGrid');
     const noteCountEl = document.getElementById('noteCount');
     const toast = document.getElementById('toast');
 
-    // Sample starter notes
-    const starterNotes = [
-      {
-        id: 1,
-        text: "Join at least one club in your first month. The friends you make there will get you through the hard weeks.",
-        author: "Jordan, Class of '24",
-        color: "#FEF08A",
-        date: "2025-09-12"
-      },
-      {
-        id: 2,
-        text: "Talk to your professors during office hours even if you don’t have a question. It makes a huge difference later.",
-        author: "Samira",
-        color: "#BAE6FD",
-        date: "2025-09-18"
-      },
-      {
-        id: 3,
-        text: "The dining hall is less crowded after 7:30 pm. Trust me.",
-        author: "Anonymous",
-        color: "#BBF7D0",
-        date: "2025-09-20"
-      },
-      {
-        id: 4,
-        text: "Don’t buy all your textbooks on day one. Check the library and wait for the first week of classes.",
-        author: "Chris",
-        color: "#FBCFE8",
-        date: "2025-09-22"
-      }
-    ];
-
-    // Load notes from localStorage or use starters
-    function loadNotes() {
-      const saved = localStorage.getItem('campusAdviceNotes');
-      if (saved) {
-        return JSON.parse(saved);
-      }
-      localStorage.setItem('campusAdviceNotes', JSON.stringify(starterNotes));
-      return starterNotes;
-    }
-
-    let notes = loadNotes();
-
-    function saveNotes() {
-      localStorage.setItem('campusAdviceNotes', JSON.stringify(notes));
-    }
+    let notes = [];
 
     function showToast(message) {
       toast.textContent = message;
@@ -512,13 +473,19 @@
       setTimeout(() => toast.classList.remove('show'), 2600);
     }
 
-    function getRandomRotation() {
-      return (Math.random() * 6 - 3).toFixed(1); // -3deg to +3deg
+    // Rotation based on the note's id, so it stays the same on every re-render
+    function rotationFor(id) {
+      return ((id % 61) / 10 - 3).toFixed(1); // -3deg to +3deg
     }
 
     function formatDate(dateStr) {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
     function renderNotes() {
@@ -529,83 +496,72 @@
           <div class="empty-state">
             <div class="emoji">📝</div>
             <p>No advice yet. Be the first to leave a sticky note!</p>
-          </div>
-        `;
+          </div>`;
         noteCountEl.textContent = '0 notes';
         return;
       }
 
-      // Newest first
-      const sorted = [...notes].sort((a, b) => b.id - a.id);
-
-      sorted.forEach(note => {
-        const rotation = getRandomRotation();
+      notes.forEach(note => {
         const el = document.createElement('article');
         el.className = 'sticky-note';
         el.style.background = note.color;
-        el.style.transform = `rotate(${rotation}deg)`;
-
+        el.style.transform = `rotate(${rotationFor(note.id)}deg)`;
         el.innerHTML = `
           <div class="note-text">${escapeHtml(note.text)}</div>
           <div class="note-meta">
             <span class="author">— ${escapeHtml(note.author || 'Anonymous')}</span>
-            <div>
-              <span style="margin-right:8px; opacity:0.7;">${formatDate(note.date)}</span>
-              <button class="delete-btn" title="Remove note" data-id="${note.id}">×</button>
-            </div>
-          </div>
-        `;
+            <span style="opacity:0.7;">${formatDate(note.created_at)}</span>
+          </div>`;
         notesGrid.appendChild(el);
       });
 
       noteCountEl.textContent = `${notes.length} note${notes.length !== 1 ? 's' : ''}`;
-
-      // Attach delete handlers
-      document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const id = Number(e.target.dataset.id);
-          if (confirm('Remove this sticky note?')) {
-            notes = notes.filter(n => n.id !== id);
-            saveNotes();
-            renderNotes();
-            showToast('Note removed');
-          }
-        });
-      });
     }
 
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
+    async function loadNotes() {
+      const { data, error } = await db
+        .from('notes')
+        .select('*')
+        .order('created_at', { ascending: false }); // newest first
+      if (error) {
+        console.error(error);
+        showToast('Could not load notes');
+        return;
+      }
+      notes = data;
+      renderNotes();
     }
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const text = document.getElementById('adviceText').value.trim();
       const author = document.getElementById('authorName').value.trim() || 'Anonymous';
       const color = document.getElementById('noteColor').value;
-
       if (!text) return;
 
-      const newNote = {
-        id: Date.now(),
-        text,
-        author,
-        color,
-        date: new Date().toISOString().split('T')[0]
-      };
+      const btn = form.querySelector('.submit-btn');
+      btn.disabled = true;
+      const { error } = await db.from('notes').insert({ text, author, color });
+      btn.disabled = false;
 
-      notes.push(newNote);
-      saveNotes();
-      renderNotes();
+      if (error) {
+        console.error(error);
+        showToast('Something went wrong. Try again.');
+        return;
+      }
+
       form.reset();
       showToast('Advice pinned successfully! 📌');
+      loadNotes();
     });
 
-    // Initial render
-    renderNotes();
+    // Live updates: when anyone adds a note, refresh the wall
+    db.channel('public:notes')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notes' }, loadNotes)
+      .subscribe();
+
+    loadNotes();
   </script>
 </body>
 </html>
