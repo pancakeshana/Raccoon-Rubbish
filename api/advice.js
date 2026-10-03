@@ -11,6 +11,11 @@ function createError(statusCode, message) {
   return error;
 }
 
+function isLocalDevelopmentHostname(hostname = '') {
+  const normalized = hostname.toLowerCase().split(':')[0];
+  return normalized === 'localhost' || normalized === '127.0.0.1' || normalized.endsWith('.local');
+}
+
 function getSupabaseConfig() {
   const baseUrl = process.env.SUPABASE_URL?.replace(/\/+$/, '');
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -50,6 +55,9 @@ function getRequestIp(req) {
 
 async function verifyTurnstile(token, ip, hostname) {
   const secret = process.env.TURNSTILE_SECRET_KEY;
+  if (isLocalDevelopmentHostname(hostname) && (!secret || !process.env.TURNSTILE_SITE_KEY)) {
+    return true;
+  }
   if (!secret || !process.env.TURNSTILE_SITE_KEY) return false;
 
   const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
@@ -98,18 +106,29 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { baseUrl } = getSupabaseConfig();
+    const localDev = isLocalDevelopmentHostname(req.headers.host || '');
 
     if (req.method === 'GET') {
-      const response = await supabaseRequest(
-        `advice_notes?select=${NOTE_COLUMNS}&order=created_at.desc&limit=500`
-      );
-      if (!response.ok) throw createError(502, 'Could not load community notes');
-      const records = await response.json();
-      return res.status(200).json({
-        notes: records.map(toNote),
-        turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || null
-      });
+      try {
+        const { baseUrl } = getSupabaseConfig();
+        const response = await supabaseRequest(
+          `advice_notes?select=${NOTE_COLUMNS}&order=created_at.desc&limit=500`
+        );
+        if (!response.ok) throw createError(502, 'Could not load community notes');
+        const records = await response.json();
+        return res.status(200).json({
+          notes: records.map(toNote),
+          turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || (localDev ? '1x00000000000000000000AA' : null)
+        });
+      } catch (error) {
+        if (localDev) {
+          return res.status(200).json({
+            notes: [],
+            turnstileSiteKey: '1x00000000000000000000AA'
+          });
+        }
+        throw error;
+      }
     }
 
     const allowedOrigin = process.env.ADVICE_ALLOWED_ORIGIN;
