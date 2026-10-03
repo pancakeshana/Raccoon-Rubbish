@@ -762,13 +762,22 @@
     // ========== SYNC (simulated + real note) ==========
     async function syncFromSources() {
         showToast('Syncing from organization sites…');
-        try {
-            // Change this URL to your deployed API
-            const res = await fetch('https://cse-raccoon-tips.vercel.app/api/events');
-            // later: const res = await fetch('https://your-api.vercel.app/api/events');
 
-            if (!res.ok) throw new Error('Network response was not ok');
+        const candidateUrls = [
+          `${window.location.origin}/api/events`,
+          'https://cse-raccoon-tips.vercel.app/api/events',
+          'https://raccoon-rubbish.vercel.app/api/events'
+        ].filter((url, index, all) => all.indexOf(url) === index);
+
+        let lastError = null;
+
+        for (const url of candidateUrls) {
+          try {
+            const res = await fetch(url, { cache: 'no-store' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
             const remote = await res.json();
+            if (!Array.isArray(remote)) throw new Error('Unexpected response format');
 
             const manual = events.filter(e => e.isManual);
             events = [...remote, ...manual];
@@ -777,10 +786,15 @@
             renderCalendar();
             renderList();
             showToast(`Synced ${remote.length} events`);
-        } catch (err) {
-            console.error(err);
-            showToast('Sync failed – using cached / seeded data');
+            return;
+          } catch (err) {
+            lastError = err;
+            console.warn(`Failed to sync from ${url}`, err);
+          }
         }
+
+        console.error('Event sync failed across all endpoints', lastError);
+        showToast('Sync failed – using cached / seeded data');
     }
 
     // ========== ADMIN ==========
