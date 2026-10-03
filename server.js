@@ -140,6 +140,18 @@ async function scrapeACM() {
 // ---------- CSES / SATUCSD scraper ----------
 async function scrapeCSES() {
   const url = 'https://csesatucsd.com/events';
+  const ignoredTitles = new Set([
+    'all events',
+    'events',
+    'career',
+    'careers',
+    'workshops',
+    'info sessions',
+    'general body',
+    'general body meetings',
+    'socials',
+    'networking'
+  ]);
   const fallbackEvents = [
     {
       id: 'cses-open-source-innovate-dev-2026-10-05',
@@ -238,7 +250,8 @@ async function scrapeCSES() {
     for (const match of matches) {
       const [, rawTitle, month, day, year, timeText] = match;
       const title = (rawTitle || '').replace(/^General\s+/i, '').replace(/\s+General$/i, '').replace(/\s+/g, ' ').trim();
-      if (!title || title.length < 4 || seen.has(`${title}|${month}|${day}|${year}`)) continue;
+      const normalizedTitle = title.toLowerCase();
+      if (!title || title.length < 4 || ignoredTitles.has(normalizedTitle) || seen.has(`${title}|${month}|${day}|${year}`)) continue;
       const monthNumber = new Date(`${month} 1, ${year}`).getMonth() + 1;
       const date = `${year}-${String(monthNumber).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       events.push(normalizeEvent({

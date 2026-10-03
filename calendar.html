@@ -370,12 +370,14 @@
     /*Color Code Organizations*/
     .cal-event.vgdc   { background: #0A2540; }      
     .cal-event.acm    { background: #2563EB; }         
+    .cal-event.cses   { background: var(--yellow); color: var(--navy); }
     .cal-event.wic    { background: #7C3AED; }         
     .cal-event.manual { background: var(--yellow); color: var(--navy); }
 
     /*Color Code Event Cards*/
     .event-card[data-org="VGDC"] .event-date-box { background: #0A2540; }
     .event-card[data-org="ACM"]  .event-date-box { background: #2563EB; }
+    .event-card[data-org="CSES"] .event-date-box { background: var(--yellow); color: var(--navy); }
     .event-card[data-org="WIC"]  .event-date-box { background: #7C3AED; }
     .event-card[data-org="Manual"] .event-date-box { background: var(--yellow); }
 
@@ -646,6 +648,7 @@
                 const org = (ev.org || '').toLowerCase();
                 if (org.includes('vgdc')) orgClass = 'vgdc';
                 else if (org.includes('acm')) orgClass = 'acm';
+              else if (org.includes('cses')) orgClass = 'cses';
                 else if (org.includes('wic')) orgClass = 'wic';
             }
 
