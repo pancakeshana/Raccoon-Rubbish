@@ -208,16 +208,6 @@
       transform: translateY(0);
     }
 
-    .submit-btn:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .turnstile-widget {
-      min-height: 65px;
-      margin-bottom: 1rem;
-    }
-
     /* Notes Section */
     .notes-header {
       display: flex;
@@ -301,6 +291,21 @@
     .sticky-note .author {
       font-weight: 600;
       color: var(--navy);
+    }
+
+    .delete-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0 4px;
+      transition: color 0.2s;
+      line-height: 1;
+    }
+
+    .delete-btn:hover {
+      color: #ef4444;
     }
 
     /* Empty state */
@@ -397,7 +402,7 @@
     <!-- Submission Form -->
     <div class="form-card">
       <h2>Leave a Sticky Note</h2>
-      <p class="subtitle">Your note will be visible to everyone. Avoid posting personal information.</p>
+      <p class="subtitle">Your tip could make someone’s first week a little easier.</p>
 
       <form id="adviceForm">
         <div class="form-group">
@@ -422,8 +427,7 @@
           </div>
         </div>
 
-        <div id="turnstileWidget" class="turnstile-widget"></div>
-        <button type="submit" class="submit-btn" disabled>
+        <button type="submit" class="submit-btn">
           <span>📌</span> Pin Your Advice
         </button>
       </form>
@@ -454,10 +458,53 @@
     const noteCountEl = document.getElementById('noteCount');
     const toast = document.getElementById('toast');
 
-    const submitButton = form.querySelector('[type="submit"]');
-    let notes = [];
-    let turnstileToken = '';
-    let turnstileWidgetId = null;
+    // Sample starter notes
+    const starterNotes = [
+      {
+        id: 1,
+        text: "Join at least one club in your first month. The friends you make there will get you through the hard weeks.",
+        author: "Jordan, Class of '24",
+        color: "#FEF08A",
+        date: "2025-09-12"
+      },
+      {
+        id: 2,
+        text: "Talk to your professors during office hours even if you don’t have a question. It makes a huge difference later.",
+        author: "Samira",
+        color: "#BAE6FD",
+        date: "2025-09-18"
+      },
+      {
+        id: 3,
+        text: "The dining hall is less crowded after 7:30 pm. Trust me.",
+        author: "Anonymous",
+        color: "#BBF7D0",
+        date: "2025-09-20"
+      },
+      {
+        id: 4,
+        text: "Don’t buy all your textbooks on day one. Check the library and wait for the first week of classes.",
+        author: "Chris",
+        color: "#FBCFE8",
+        date: "2025-09-22"
+      }
+    ];
+
+    // Load notes from localStorage or use starters
+    function loadNotes() {
+      const saved = localStorage.getItem('campusAdviceNotes');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+      localStorage.setItem('campusAdviceNotes', JSON.stringify(starterNotes));
+      return starterNotes;
+    }
+
+    let notes = loadNotes();
+
+    function saveNotes() {
+      localStorage.setItem('campusAdviceNotes', JSON.stringify(notes));
+    }
 
     function showToast(message) {
       toast.textContent = message;
@@ -470,63 +517,8 @@
     }
 
     function formatDate(dateStr) {
-      const d = new Date(`${dateStr}T12:00:00`);
+      const d = new Date(dateStr);
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
-
-    function loadTurnstileScript() {
-      if (window.turnstile) return Promise.resolve();
-      return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-        script.async = true;
-        script.defer = true;
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
-    }
-
-    async function loadSharedNotes() {
-      notesGrid.innerHTML = '<p>Loading community notes...</p>';
-      try {
-        const response = await fetch('/api/advice');
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Could not load community notes');
-
-        notes = result.notes;
-        renderNotes();
-
-        if (!result.turnstileSiteKey) {
-          showToast('Note submissions are not configured yet');
-          return;
-        }
-
-        await loadTurnstileScript();
-        turnstileWidgetId = window.turnstile.render('#turnstileWidget', {
-          sitekey: result.turnstileSiteKey,
-          action: 'advice_submit',
-          callback(token) {
-            turnstileToken = token;
-            submitButton.disabled = false;
-          },
-          'expired-callback'() {
-            turnstileToken = '';
-            submitButton.disabled = true;
-          },
-          'error-callback'() {
-            turnstileToken = '';
-            submitButton.disabled = true;
-            showToast('Human verification is unavailable');
-          }
-        });
-      } catch (error) {
-        console.error(error);
-        notesGrid.innerHTML = '<p class="empty-state">Community notes could not be loaded. Please try again later.</p>';
-        noteCountEl.textContent = 'Unavailable';
-        submitButton.disabled = true;
-        showToast('Could not connect to the shared advice wall');
-      }
     }
 
     function renderNotes() {
@@ -543,7 +535,8 @@
         return;
       }
 
-      const sorted = [...notes].sort((a, b) => b.createdAt - a.createdAt);
+      // Newest first
+      const sorted = [...notes].sort((a, b) => b.id - a.id);
 
       sorted.forEach(note => {
         const rotation = getRandomRotation();
@@ -558,6 +551,7 @@
             <span class="author">— ${escapeHtml(note.author || 'Anonymous')}</span>
             <div>
               <span style="margin-right:8px; opacity:0.7;">${formatDate(note.date)}</span>
+              <button class="delete-btn" title="Remove note" data-id="${note.id}">×</button>
             </div>
           </div>
         `;
@@ -566,6 +560,18 @@
 
       noteCountEl.textContent = `${notes.length} note${notes.length !== 1 ? 's' : ''}`;
 
+      // Attach delete handlers
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = Number(e.target.dataset.id);
+          if (confirm('Remove this sticky note?')) {
+            notes = notes.filter(n => n.id !== id);
+            saveNotes();
+            renderNotes();
+            showToast('Note removed');
+          }
+        });
+      });
     }
 
     function escapeHtml(text) {
@@ -574,7 +580,7 @@
       return div.innerHTML;
     }
 
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
 
       const text = document.getElementById('adviceText').value.trim();
@@ -582,37 +588,24 @@
       const color = document.getElementById('noteColor').value;
 
       if (!text) return;
-      if (!turnstileToken) {
-        showToast('Complete the human verification challenge first');
-        return;
-      }
 
-      submitButton.disabled = true;
-      try {
-        const response = await fetch('/api/advice', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, author, color, turnstileToken })
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Could not save your advice');
+      const newNote = {
+        id: Date.now(),
+        text,
+        author,
+        color,
+        date: new Date().toISOString().split('T')[0]
+      };
 
-        notes.unshift(result.note);
-        renderNotes();
-        form.reset();
-        showToast('Advice pinned successfully! 📌');
-      } catch (error) {
-        console.error(error);
-        showToast(error.message || 'Could not save your advice');
-      } finally {
-        turnstileToken = '';
-        if (window.turnstile && turnstileWidgetId !== null) {
-          window.turnstile.reset(turnstileWidgetId);
-        }
-      }
+      notes.push(newNote);
+      saveNotes();
+      renderNotes();
+      form.reset();
+      showToast('Advice pinned successfully! 📌');
     });
 
-    loadSharedNotes();
+    // Initial render
+    renderNotes();
   </script>
 </body>
 </html>
