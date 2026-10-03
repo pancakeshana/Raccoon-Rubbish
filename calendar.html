@@ -451,7 +451,7 @@
       <h3 style="color:var(--navy); margin-bottom:0.75rem;">Admin Access</h3>
       <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">Enter the passcode to add or manage events.</p>
       <div class="form-group">
-        <input type="password" id="passcodeInput" placeholder="Passcode" maxlength="20">
+        <input type="password" id="passcodeInput" placeholder="Passcode" maxlength="128">
       </div>
       <button class="btn" id="passcodeSubmit">Unlock</button>
     </div>
@@ -810,16 +810,34 @@
       document.getElementById('passcodeInput').focus();
     });
 
-    document.getElementById('passcodeSubmit').addEventListener('click', () => {
+    document.getElementById('passcodeSubmit').addEventListener('click', async () => {
       const code = document.getElementById('passcodeInput').value.trim();
-      if (code === '9320786') {
-        adminUnlocked = true;
-        document.getElementById('passcodeBox').style.display = 'none';
-        document.getElementById('adminPanel').classList.add('visible');
-        renderList(); // show delete buttons
-        showToast('Admin unlocked');
-      } else {
-        showToast('Incorrect passcode');
+      const button = document.getElementById('passcodeSubmit');
+      button.disabled = true;
+
+      try {
+        const response = await fetch('/api/calendar-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: code })
+        });
+
+        if (response.status === 503) {
+          showToast('Admin access is not configured');
+        } else if (!response.ok) {
+          showToast('Incorrect passcode');
+        } else {
+          adminUnlocked = true;
+          document.getElementById('passcodeBox').style.display = 'none';
+          document.getElementById('adminPanel').classList.add('visible');
+          renderList();
+          showToast('Admin unlocked');
+        }
+      } catch (error) {
+        showToast('Could not verify admin passcode');
+      } finally {
+        document.getElementById('passcodeInput').value = '';
+        button.disabled = false;
       }
     });
 
