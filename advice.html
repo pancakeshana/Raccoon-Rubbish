@@ -458,9 +458,53 @@
     const noteCountEl = document.getElementById('noteCount');
     const toast = document.getElementById('toast');
 
-    const localNotesKey = 'campusAdviceNotes';
-    let notes = [];
-    let adminPasswordForSession = null;
+    // Sample starter notes
+    const starterNotes = [
+      {
+        id: 1,
+        text: "Join at least one club in your first month. The friends you make there will get you through the hard weeks.",
+        author: "Jordan, Class of '24",
+        color: "#FEF08A",
+        date: "2025-09-12"
+      },
+      {
+        id: 2,
+        text: "Talk to your professors during office hours even if you don’t have a question. It makes a huge difference later.",
+        author: "Samira",
+        color: "#BAE6FD",
+        date: "2025-09-18"
+      },
+      {
+        id: 3,
+        text: "The dining hall is less crowded after 7:30 pm. Trust me.",
+        author: "Anonymous",
+        color: "#BBF7D0",
+        date: "2025-09-20"
+      },
+      {
+        id: 4,
+        text: "Don’t buy all your textbooks on day one. Check the library and wait for the first week of classes.",
+        author: "Chris",
+        color: "#FBCFE8",
+        date: "2025-09-22"
+      }
+    ];
+
+    // Load notes from localStorage or use starters
+    function loadNotes() {
+      const saved = localStorage.getItem('campusAdviceNotes');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+      localStorage.setItem('campusAdviceNotes', JSON.stringify(starterNotes));
+      return starterNotes;
+    }
+
+    let notes = loadNotes();
+
+    function saveNotes() {
+      localStorage.setItem('campusAdviceNotes', JSON.stringify(notes));
+    }
 
     function showToast(message) {
       toast.textContent = message;
@@ -473,62 +517,8 @@
     }
 
     function formatDate(dateStr) {
-      const d = new Date(`${dateStr}T12:00:00`);
+      const d = new Date(dateStr);
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
-
-    function getLocalDateString() {
-      const now = new Date();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      return `${now.getFullYear()}-${month}-${day}`;
-    }
-
-    async function migrateLocalNotes() {
-      const saved = localStorage.getItem(localNotesKey);
-      if (!saved) return;
-
-      let localNotes;
-      try {
-        localNotes = JSON.parse(saved);
-      } catch {
-        throw new Error('Saved browser notes could not be read');
-      }
-      if (!Array.isArray(localNotes)) throw new Error('Saved browser notes are invalid');
-
-      for (const note of localNotes) {
-        const response = await fetch('/api/advice', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text: note.text,
-            author: note.author,
-            color: note.color,
-            date: note.date,
-            clientId: `legacy-${note.id}`
-          })
-        });
-        if (!response.ok) throw new Error('Existing notes could not be migrated');
-      }
-
-      localStorage.removeItem(localNotesKey);
-    }
-
-    async function loadSharedNotes() {
-      notesGrid.innerHTML = '<p>Loading community notes...</p>';
-      try {
-        await migrateLocalNotes();
-        const response = await fetch('/api/advice');
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Could not load community notes');
-        notes = result.notes;
-        renderNotes();
-      } catch (error) {
-        console.error(error);
-        notesGrid.innerHTML = '<p class="empty-state">Community notes could not be loaded. Please try again later.</p>';
-        noteCountEl.textContent = 'Unavailable';
-        showToast('Could not connect to the shared advice wall');
-      }
     }
 
     function renderNotes() {
@@ -546,7 +536,7 @@
       }
 
       // Newest first
-      const sorted = [...notes].sort((a, b) => b.createdAt - a.createdAt);
+      const sorted = [...notes].sort((a, b) => b.id - a.id);
 
       sorted.forEach(note => {
         const rotation = getRandomRotation();
@@ -561,7 +551,7 @@
             <span class="author">— ${escapeHtml(note.author || 'Anonymous')}</span>
             <div>
               <span style="margin-right:8px; opacity:0.7;">${formatDate(note.date)}</span>
-              <button class="delete-btn" title="Remove shared note (admin only)" aria-label="Remove shared note" data-id="${escapeHtml(note.id)}">×</button>
+              <button class="delete-btn" title="Remove note" data-id="${note.id}">×</button>
             </div>
           </div>
         `;
@@ -570,6 +560,18 @@
 
       noteCountEl.textContent = `${notes.length} note${notes.length !== 1 ? 's' : ''}`;
 
+      // Attach delete handlers
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = Number(e.target.dataset.id);
+          if (confirm('Remove this sticky note?')) {
+            notes = notes.filter(n => n.id !== id);
+            saveNotes();
+            renderNotes();
+            showToast('Note removed');
+          }
+        });
+      });
     }
 
     function escapeHtml(text) {
@@ -578,41 +580,7 @@
       return div.innerHTML;
     }
 
-    notesGrid.addEventListener('click', async (event) => {
-      const button = event.target.closest('.delete-btn');
-      if (!button || !confirm('Remove this shared sticky note?')) return;
-
-      const adminPassword = adminPasswordForSession || prompt('Enter the admin password to remove this note:');
-      if (!adminPassword) return;
-
-      try {
-        const response = await fetch('/api/advice', {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-admin-password': adminPassword
-          },
-          body: JSON.stringify({ id: button.dataset.id })
-        });
-        const result = await response.json();
-        if (response.status === 403) {
-          adminPasswordForSession = null;
-          showToast('Incorrect admin password');
-          return;
-        }
-        if (!response.ok) throw new Error(result.error || 'Could not remove this note');
-
-        adminPasswordForSession = adminPassword;
-        notes = notes.filter(note => note.id !== button.dataset.id);
-        renderNotes();
-        showToast('Note removed');
-      } catch (error) {
-        console.error(error);
-        showToast(error.message || 'Could not remove this note');
-      }
-    });
-
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
 
       const text = document.getElementById('adviceText').value.trim();
@@ -621,36 +589,23 @@
 
       if (!text) return;
 
-      const submitButton = form.querySelector('[type="submit"]');
-      submitButton.disabled = true;
-      try {
-        const response = await fetch('/api/advice', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            clientId: `note-${crypto.randomUUID()}`,
-            text,
-            author,
-            color,
-            date: getLocalDateString()
-          })
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Could not save your advice');
+      const newNote = {
+        id: Date.now(),
+        text,
+        author,
+        color,
+        date: new Date().toISOString().split('T')[0]
+      };
 
-        notes.unshift(result.note);
-        renderNotes();
-        form.reset();
-        showToast('Advice pinned successfully! 📌');
-      } catch (error) {
-        console.error(error);
-        showToast(error.message || 'Could not save your advice');
-      } finally {
-        submitButton.disabled = false;
-      }
+      notes.push(newNote);
+      saveNotes();
+      renderNotes();
+      form.reset();
+      showToast('Advice pinned successfully! 📌');
     });
 
-    loadSharedNotes();
+    // Initial render
+    renderNotes();
   </script>
 </body>
 </html>

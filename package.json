@@ -4,7 +4,6 @@
   "private": true,
   "dependencies": {
     "cheerio": "^1.0.0",
-    "mongodb": "^6.20.0",
     "node-fetch": "^2.7.0",
     "node-ical": "^0.16.1",
     "node-cache": "^5.1.2"
